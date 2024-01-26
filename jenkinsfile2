@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+
+    stages {
+        stage('Deploy react-app with Docker Compose') {
+          steps {
+              script {
+                  sh "sudo docker-compose -f reactApplication/docker-compose.yml down -v"
+                  sh "sudo docker-compose -f reactApplication/docker-compose.yml up -d --build"
+              }
+          }
+        }
+        stage('Deploy Node-app with Docker Compose') {
+          steps {
+              script {
+                  sh "sudo docker-compose -f nodeApplication/docker-compose.yml down -v"
+                  sh "sudo docker-compose -f nodeApplication/docker-compose.yml up -d --build"
+              }
+          }
+        }
+     }
+
+}

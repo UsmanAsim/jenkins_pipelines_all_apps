@@ -1,0 +1,51 @@
+pipeline {
+    agent any
+ 
+    stages {
+       stage('Clean workspace') {
+           steps {
+               script {
+                   deleteDir()
+}
+           }
+       }
+        stage('Checkout') {
+            steps {
+                script {
+                   sshagent(credentials: ['ssh-Azure']) { 
+                       // Manually add the host key to known hosts
+                       sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts' 
+                       sh 'git clone git@github.com:Usmanasim11/AR-final-demo.git'
+                       }
+                   }
+               }
+           }
+        
+        
+        stage('Deploy react-app with Docker Compose') {
+          steps {
+              script {
+                  //sh "docker-compose -f reactApplication/docker-compose.yml down -v"
+                  sh "docker-compose -f reactApplication/docker-compose.yml up -d --build"
+              }
+          }
+        }
+        stage('Deploy Node-app with Docker Compose') {
+          steps {
+              script {
+                  sh "docker-compose -f nodeApplication/docker-compose.yml down -v"
+                  sh "docker-compose -f nodeApplication/docker-compose.yml up -d --build"
+              }
+          }
+        }
+        // stage('Deploy node-react-app with Docker Compose') {
+        //      steps {
+        //          script {
+        //              sh "docker-compose -f final-demo/docker-compose.yml down -v"
+        //              sh "docker-compose -f final-demo/docker-compose.yml up -d --build"
+        //          }
+        //      }
+        // }
+    }
+
+}
