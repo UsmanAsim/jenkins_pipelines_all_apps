@@ -1,0 +1,63 @@
+pipeline {
+     agent any
+    stages {
+       stage('Clean workspace') {
+           steps {
+               script {
+                   deleteDir()
+}
+           }
+       }
+        stage('Checkout') {
+            steps {
+                script {
+                   //checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-pat-', url: 'https://github.com/rehmanjaffar/nodeApp.git']])
+                //   checkout([$class: 'GitSCM',
+                //              branches: [[name: '*/master']],
+                //              extensions: [[$class: 'SparseCheckoutPaths', paths: ['reactApp-master']]],
+                //              userRemoteConfigs: [[credentialsId: 'github-pat',
+                //              url: 'https://github.com/UsmanAsim11/projects.git']]
+                //     ])
+                checkout([$class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [
+                            [$class: 'SparseCheckoutPaths', sparseCheckoutPaths:[[$class:'SparseCheckoutPath', path:'Python-App/']]],
+                            ],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[credentialsId: 'github-pat',
+                            url: 'https://github.com/Usmanasim11/AR-final-demo.git']]])
+                }
+            }
+        }
+
+/// *** Comment the below stage when run without docker ***
+        // stage('Build and Run') {
+        //     steps {
+        //         script {
+        //             // Build and run your Python application
+        //             dir ('Python-App') {
+        //                 sh "python3 hello.py" }
+        //         }
+        //     }
+        // }
+
+// *** UnComment below stage when using with Docker *** 
+        stage('Deploy with Docker Compose') {
+            steps {
+                script {
+                    // Bring down the previous deployment
+                    sh "docker-compose -f Python-App/docker-compose.yml down -v"
+
+                    // Update the docker-compose.yml file with the new image tag
+                    def buildNumber = env.BUILD_NUMBER 
+
+                    sh "sed -i 's/image: python-app:.*/image: python-app:${buildNumber}/' Python-App/docker-compose.yml"
+                    // Bring up the latest deployment
+                    sh "docker-compose -f Python-App/docker-compose.yml up -d"
+                }
+            }
+        }
+        
+    }
+}

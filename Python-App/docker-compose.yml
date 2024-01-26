@@ -1,0 +1,11 @@
+version: '3'
+services:
+  python-app:
+    build:
+      context: .
+      dockerfile: dockerfile
+    image: python-app:${BUILD_NUMBER}
+    container_name: python-app_${BUILD_NUMBER}
+    ports:
+      - "3456:3456"
+      

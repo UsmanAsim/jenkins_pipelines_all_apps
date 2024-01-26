@@ -1,0 +1,23 @@
+pipeline {
+    agent any
+    environment{
+        PATH = "${tool name: 'NodeJS', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin:${env.PATH}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                checkout([$class: 'GitSCM',
+                            branches: [[name: '*/master']],
+                            userRemoteConfigs: [[credentialsId: 'github-pat-',
+                            url: 'https://github.com/rehmanjaffar/projects.git']]])
+                }
+            }
+        }
+        stage('node version') {
+            steps{
+            sh 'npm -v'
+            }
+        }
+    }
+}

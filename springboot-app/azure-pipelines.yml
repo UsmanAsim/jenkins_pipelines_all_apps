@@ -1,0 +1,46 @@
+trigger:
+  branches:
+    include:
+    - master
+stages:
+- stage: __default
+  jobs:
+  - job: Job
+    pool:
+      vmImage: 'ubuntu-latest'
+    steps:
+    - task: CmdLine@2
+      displayName: 'Build and package Maven project'
+      inputs:
+        script: 'mvn clean package'
+    - task: CopyFiles@2
+      displayName: 'Copy pom.xml to common folder'
+      inputs:
+        SourceFolder: '$(system.defaultworkingdirectory)'
+        Contents: '**/pom.xml'
+        TargetFolder: '$(build.artifactstagingdirectory)/common'
+      condition: succeededOrFailed()
+    - task: CmdLine@2
+      displayName: 'Move JAR files to common folder'
+      condition: succeededOrFailed()
+      inputs:
+        script: 'mv $(System.DefaultWorkingDirectory)/**/*.jar $(Build.ArtifactStagingDirectory)/common'
+    - task: CmdLine@2
+      displayName: 'List contents of common folder'
+      inputs:
+        script: 'ls $(build.artifactstagingdirectory)/common'
+    - task: PublishBuildArtifacts@1
+      displayName: 'Publish Artifacts'
+      inputs:
+        PathtoPublish: '$(build.artifactstagingdirectory)/common'
+        ArtifactName: 'Java Artifacts'
+        publishLocation: 'Container'
+    - task: MavenAuthenticate@0
+      inputs:
+        mavenServiceConnections: 'maven-artifacts'
+      displayName: 'Authenticate with Azure DevOps Artifacts'
+    - task: CmdLine@2
+      displayName: 'Publish artifacts to Azure DevOps Artifacts'
+      inputs:
+        script: 'mvn deploy'
+

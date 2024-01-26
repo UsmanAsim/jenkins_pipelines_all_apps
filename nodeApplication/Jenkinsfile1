@@ -1,0 +1,60 @@
+// Node Application without Docker //
+
+pipeline {
+    agent any
+    
+// ** comment this env when you run with docker compose **
+    environment{
+        PATH = "${tool name: 'nodejs', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin:${env.PATH}"
+    }
+    stages {
+        stage('Clean workspace') {
+            steps {
+                script {
+                    deleteDir()
+                }
+            }
+        }
+        
+        stage('Checkout') {
+            steps {
+                script {
+                checkout([$class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [
+                            [$class: 'SparseCheckoutPaths', sparseCheckoutPaths:[[$class:'SparseCheckoutPath', path:'nodeApplication/']]],
+                            ],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[credentialsId: 'github-pat',
+                            url: 'https://github.com/Usmanasim11/AR-final-demo.git']]])
+                }
+            }
+        }
+        
+// comment out below check out stage due to spare checkout        
+        // stage('Checkout') {
+        //     steps {
+        //         script {
+        //             // Start the SSH agent
+        //             sshagent(credentials: ['c78c0348-18f0-4d31-ae84-4467c1180f2a']) {
+        //                 // Manually add the host key to known hosts
+        //                 sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
+        //                 // Run your Git commands here
+        //                 sh 'git clone git@github.com:Usmanasim11/AR-final-demo.git'
+        //             }
+        //         }
+        //     }
+        // }
+
+        stage('Run') {
+            steps {
+                dir('nodeApplication') {
+                    sh 'npm install -g pm2' // Install PM2 globally
+                    sh 'npm install' // Install project dependencies
+                    sh 'npm start index.js' // Start the app on port 4000
+                }
+            }
+        }
+    }
+}

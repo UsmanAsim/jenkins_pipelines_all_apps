@@ -1,0 +1,35 @@
+pipeline {
+    agent any
+    environment{
+        PATH = "${tool name: 'NodeJS', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin:${env.PATH}"
+    }
+    stages {
+        stage('Checkout') {
+            steps {
+                script {
+                   //checkout scmGit(branches: [[name: '*/main']], extensions: [], userRemoteConfigs: [[credentialsId: 'github-pat-', url: 'https://github.com/rehmanjaffar/nodeApp.git']])
+                //   checkout([$class: 'GitSCM',
+                //              branches: [[name: '*/master']],
+                //              extensions: [[$class: 'SparseCheckoutPaths', paths: ['reactApp-master']]],
+                //              userRemoteConfigs: [[credentialsId: 'github-pat',
+                //              url: 'https://github.com/UsmanAsim11/projects.git']]
+                //     ])
+                checkout([$class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [
+                            [$class: 'SparseCheckoutPaths', sparseCheckoutPaths:[[$class:'SparseCheckoutPath', path:'reactApplication/'],[$class:'SparseCheckoutPath', path:'nodeApplication/']]],
+                            ],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[credentialsId: 'github-pat',
+                            url: 'https://github.com/Usmanasim11/AR-final-demo.git']]])
+                }
+            }
+        }
+        stage('node version') {
+            steps{
+            sh 'npm -v'
+            }
+        }
+    }
+}

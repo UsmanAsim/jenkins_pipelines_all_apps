@@ -1,0 +1,11 @@
+version: '3'
+services:
+  node-app:
+    build: .
+    ports:
+      - "4000:9090"
+    image: node-app
+    container_name: node-app
+    #image: node-app:${BUILD_NUMBER}
+    #container_name: node-app_${BUILD_NUMBER}
+    

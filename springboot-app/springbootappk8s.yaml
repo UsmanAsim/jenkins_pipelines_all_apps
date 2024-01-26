@@ -1,0 +1,36 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: spring-deployment
+spec:
+  selector:
+    matchLabels:
+      app: example-app
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: example-app
+    spec:
+      containers:
+        - name: spring-container
+          image: dockerregistry.com/springbootjacoco:0.0.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8082
+      imagePullSecrets:
+        - name: dockerregistry
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: spring-service
+spec:
+  type: NodePort
+  ports:
+    - name: http
+      port: 8082
+      targetPort: 8082
+  selector:
+    app: example-app
+

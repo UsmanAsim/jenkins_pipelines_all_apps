@@ -1,0 +1,67 @@
+pipeline { 
+    agent any 
+    stages { 
+        stage('Clean workspace') { 
+            steps { 
+                script { 
+                    deleteDir() 
+                } 
+            } 
+        } 
+        stage('Checkout') { 
+            steps { 
+                script { 
+                    // Start the SSH agent 
+                    sshagent(credentials: ['c78c0348-18f0-4d31-ae84-4467c1180f2a']) { 
+                        // Manually add the host key to known hosts
+                        sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts' 
+                        // Run your Git commands here 
+                        sh 'git clone git@github.com:rehmanjaffar/javaApp.git' 
+                    } 
+                } 
+            } 
+        }
+        stage('Build') {
+            steps {
+                dir('javaApp') { // Change to the workspace directory
+                    sh 'mvn clean install'
+                    sh 'mvn clean package'
+                }
+            }
+        }
+        stage('Test') {
+            steps {
+                dir('javaApp') { // Change to the workspace directory
+                    sh 'mvn test'
+                }
+            }
+        }
+        
+        
+            
+        stage('SonarQube Analysis') {
+            steps {
+                dir('javaApp') {
+                withSonarQubeEnv('sonarqube') {
+                    sh '''
+                        mvn clean verify sonar:sonar -Dsonar.projectKey=sonar-test -Dsonar.host.url=http://13.92.119.39:9000 -Dsonar.login=577cc19f57ea3ec20440aee49690423860018e6a
+                    '''
+                 }
+                }
+             }
+         }
+        
+        stage('Check Quality Gate') {
+            steps {
+                dir('javaApp') { // Change to the workspace directory
+                    script {
+                        def qualityGate = waitForQualityGate()
+                        if (qualityGate.status != 'OK') {
+                            error "Quality Gate failed: ${qualityGate.status}"
+                        }
+                    }
+                }
+            }
+        }
+    } 
+}

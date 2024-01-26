@@ -1,0 +1,96 @@
+pipeline {
+    agent any
+    
+// ** comment this env when you run with docker compose **
+    environment{
+        PATH = "${tool name: 'nodejs', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'}/bin:${env.PATH}"
+    }
+    stages {
+        stage('Clean workspace') {
+            steps {
+                script {
+                    deleteDir()
+                }
+            }
+        }
+        stage('Checkout') {
+            steps {
+                script {
+                checkout([$class: 'GitSCM',
+                            branches: [[name: '*/main']],
+                            doGenerateSubmoduleConfigurations: false,
+                            extensions: [
+                            [$class: 'SparseCheckoutPaths', sparseCheckoutPaths:[[$class:'SparseCheckoutPath', path:'reactApplication/']]],
+                            ],
+                            submoduleCfg: [],
+                            userRemoteConfigs: [[credentialsId: 'github-pat',
+                            url: 'https://github.com/Usmanasim11/AR-final-demo.git']]])
+                }
+            }
+        }
+        
+// comment out below check out stage due to spare checkout        
+        // stage('Checkout') {
+        //     steps {
+        //         script {
+        //             // Start the SSH agent
+        //             sshagent(credentials: ['c78c0348-18f0-4d31-ae84-4467c1180f2a']) {
+        //                 // Manually add the host key to known hosts
+        //                 sh 'ssh-keyscan github.com >> ~/.ssh/known_hosts'
+        //                 // Run your Git commands here
+        //                 sh 'git clone git@github.com:Usmanasim11/AR-final-demo.git'
+        //             }
+        //         }
+        //     }
+        // }
+
+// ** use in case on pushing the image to private docker registry ** 
+    //   stage('Tag Image') { 
+    //         steps { 
+    //             script { 
+    //                 def buildNumber = env.BUILD_NUMBER 
+    //                 def imageName = "node-app:${buildNumber}" 
+    //                 // Build and tag the Docker image with the build number 
+    //                 sh "docker build -t ${imageName} -f nodeApplication/dockerfile ." 
+    //               docker.withRegistry('https://rehman.docker.com', '34bf19fa-5307-4582-9ccb-e085f6b57957') { 
+    //                     // Push the tagged image to your local registry 
+    //                     sh "docker tag ${imageName} rehman.docker.com/${imageName}" 
+    //                     sh "docker push rehman.docker.com/${imageName}" 
+    //                 } 
+    //             } 
+    //         } 
+    //     } 
+        
+        
+// *** when you want to use docker compose for the NODE APP Uncomment the below stage and run it ***
+
+        // stage('Deploy with Docker Compose') {
+        //     steps {
+        //         script {
+        //             // Bring down the previous deployment
+        //             sh "docker-compose -f reactApplication/docker-compose.yml down -v"
+
+        //             // Update the docker-compose.yml file with the new image tag
+        //             def buildNumber = env.BUILD_NUMBER 
+
+        //             sh "sed -i 's/image: react-app:.*/image: react-app:${buildNumber}/' reactApplication/docker-compose.yml"
+        //             // Bring up the latest deployment
+        //             sh "docker-compose -f reactApplication/docker-compose.yml up -d"
+        //         }
+        //     }
+        // } 
+        
+// *** when you want to run without docker compose for the NODE APP Uncomment the below stage and run it ***        
+        stage('Run') {
+            steps {
+                dir('reactApplication') {
+                    sh 'npm install -g pm2' // Install PM2 globally
+                    sh 'npm install' // Install project dependencies
+                    sh 'npm start src/index.js' // ** comment the line when using docker-compose **
+                }
+            }
+        }
+
+        
+    }
+}
